@@ -45,3 +45,4 @@ CTestTestfile.cmake
 _deps
 
 .idea
+/out/
