@@ -1,0 +1,25 @@
+# ninja log v5
+1	1267	6834014823715499	CMakeFiles/Raven.dir/main.cpp.obj	d9a6035a039b8b55
+34	1344	6834014824463496	external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.obj	b5c9e0d5e4904db0
+4	1390	6834014824702850	external/glfw/src/CMakeFiles/glfw.dir/init.c.obj	120f0ff5017f7d5e
+15	1291	6834014823855122	external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.obj	f2a789abe0394274
+30	1378	6834014824942280	external/glfw/src/CMakeFiles/glfw.dir/null_init.c.obj	461fa212de1ba722
+6	1490	6834014825730114	external/glfw/src/CMakeFiles/glfw.dir/input.c.obj	2947d9f8c6564f53
+11	1299	6834014823954856	external/glfw/src/CMakeFiles/glfw.dir/monitor.c.obj	ef6d95e8126b2434
+13	1370	6834014824652983	external/glfw/src/CMakeFiles/glfw.dir/platform.c.obj	220a5b6afedd1d9a
+1491	2623	6834014837377692	external/glfw/src/CMakeFiles/glfw.dir/win32_time.c.obj	132297ffee3f7330
+32	1508	6834014825879709	external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.obj	44d6a446cbcb5374
+1300	2534	6834014836230754	external/glfw/src/CMakeFiles/glfw.dir/null_window.c.obj	a63e746c3fb3276c
+9	1512	6834014826258692	external/glfw/src/CMakeFiles/glfw.dir/context.c.obj	f79f641c77eb1379
+1294	2368	6834014834656232	external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.obj	6207c8e8c250d985
+1272	2505	6834014836071175	external/glfw/src/CMakeFiles/glfw.dir/window.c.obj	8531a5d61269867
+1345	2527	6834014836180884	external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.obj	5126240a3301ec
+1378	2530	6834014836300591	external/glfw/src/CMakeFiles/glfw.dir/win32_thread.c.obj	ac0e24fd89866c1b
+1371	2579	6834014836859070	external/glfw/src/CMakeFiles/glfw.dir/win32_init.c.obj	476483092627aedb
+1391	2621	6834014837317848	external/glfw/src/CMakeFiles/glfw.dir/win32_module.c.obj	1fa387299a437f32
+2506	3346	6834014843396687	external/glfw/src/CMakeFiles/glfw.dir/win32_window.c.obj	73fec2402c3f9982
+1508	2687	6834014838095758	external/glfw/src/CMakeFiles/glfw.dir/wgl_context.c.obj	473a9d238259be8f
+1512	2737	6834014838584465	external/glfw/src/CMakeFiles/glfw.dir/win32_joystick.c.obj	6d809aa7d192d32c
+2369	3207	6834014842230218	external/glfw/src/CMakeFiles/glfw.dir/win32_monitor.c.obj	a02e83746e9e413c
+3347	3649	6834014847446889	external/glfw/src/libglfw3.a	1cfbe6f7e6038af1
+3650	4070	6834014851505758	Raven.exe	27171e4b58e99919
