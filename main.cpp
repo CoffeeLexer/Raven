@@ -1,9 +1,12 @@
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 
 #include <iostream>
 
 int main() {
+    glm::vec3 v3 = {1, 2, 3};
+    v3.x = 2;
     GLFWwindow* window;
     int width, height;
 
