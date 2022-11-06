@@ -7,7 +7,10 @@
 
 
 class Window {
-
+private:
+    Window();
+    ~Window();
+public:
 };
 
 

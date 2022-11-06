@@ -8,7 +8,8 @@
 namespace Raven {
 
     class FileSystem {
-
+    public:
+        static std::string getExtension(const std::string &file);
     };
 
 } // Raven
