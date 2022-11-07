@@ -25,7 +25,7 @@ Shader::~Shader() {
     glDeleteProgram(shaderProgram);
 }
 
-Shader Shader::add(const std::string &path) {
+void Shader::add(const std::string &path) {
     GLenum shaderType;
     try {
         shaderType = stringToShaderType.at(Raven::FileSystem::getExtension(path));
@@ -76,8 +76,6 @@ Shader Shader::add(const std::string &path) {
 
     glAttachShader(shaderProgram, shader);
     glDeleteShader(shader);
-
-    return *this;
 }
 
 void Shader::build() const {
@@ -86,7 +84,7 @@ void Shader::build() const {
     int params;
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &params);
     if (!params) {
-        glGetShaderiv(shaderProgram, GL_INFO_LOG_LENGTH, &params);
+        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &params);
         char infoLog[params];
         glGetProgramInfoLog(shaderProgram, params, nullptr, infoLog);
         std::string error = "ERROR::SHADER::BUILD::LINKING_FAILED\n";

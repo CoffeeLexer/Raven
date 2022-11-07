@@ -2,9 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
-#include <fstream>
 
-#include "source/FileSystem.h"
 #include "source/Shader.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -12,19 +10,6 @@ void processInput(GLFWwindow *window);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
-
-const char *vertexShaderSource = "#version 330 core\n"
-                                 "layout (location = 0) in vec3 aPos;\n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-                                 "}\0";
-const char *fragmentShaderSource = "#version 330 core\n"
-                                   "out vec4 FragColor;\n"
-                                   "void main()\n"
-                                   "{\n"
-                                   "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-                                   "}\n\0";
 
 int main()
 {
@@ -49,10 +34,8 @@ int main()
         return -1;
     }
 
-    Shader s = Shader()
-            .add("assets/shaders/sources/simple/shader.vert")
-            .add("assets/shaders/sources/simple/shader.frag");
-    s.build();
+
+
 
     float vertices[] = {
             0.5f,  0.5f, 0.0f,
@@ -84,6 +67,14 @@ int main()
 
     glBindVertexArray(0);
 
+
+    Shader s1 = Shader();
+    s1.add("assets/shaders/sources/simple/shader.vert");
+    s1.add("assets/shaders/sources/simple/shader.frag");
+    s1.build();
+
+    Shader s2("assets/shaders/sources/simple/shader.vert", "assets/shaders/sources/simple/shader.frag");
+
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -91,7 +82,7 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        s.use();
+        s2.use();
         glBindVertexArray(VAO);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
