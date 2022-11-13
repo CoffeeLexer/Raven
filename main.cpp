@@ -73,10 +73,10 @@ int main()
     ImGui_ImplOpenGL3_Init("#version 330");
 
     float vertices[] = {
-            0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
-            0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f
+            0.5f,  0.5f, -1.0f, 1.0f, 1.0f,
+            0.5f, -0.5f, -1.0f, 1.0f, 0.0f,
+            -0.5f, -0.5f, +1.0f, 0.0f, 0.0f,
+            -0.5f,  0.5f, +1.0f, 0.0f, 1.0f
     };
     unsigned int indices[] = {
             0, 1, 3,
@@ -154,10 +154,10 @@ int main()
     // Model
     glm::vec3 translate(0.0f, 0.0f, 0.0f);
     float rotate = 0.0f;
-    glm::vec3 scale(0.0f, 0.0f, 0.0f);
+    glm::vec3 scale(1.0f, 1.0f, 1.0f);
 
     // View
-    glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraPosition = glm::vec3(4.0f, 3.0f, 3.0f);
     glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -198,20 +198,21 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //##############################################################################################################
 
-        glm::mat4 model;
-        glm::scale(model, scale);
-        glm::rotate(model, rotate, up);
+        glm::mat4 model(1.0f);
         glm::translate(model, translate);
+        glm::rotate(model, rotate, up);
+        glm::scale(model, scale);
+//        model = glm::mat4(1.0f);
 
         glm::mat4 view = glm::lookAt(cameraPosition, cameraTarget, up);
 
         glm::mat4 projection = glm::perspective(glm::radians(fov), static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT), 0.1f, 100.0f);
 
         glm::mat4 mvp = projection * view * model;
-//        glm::mat4 mvp = model * view * projection;
 
         s2.use();
         s2.set(mvp);
+//        s2.set(glm::mat4(1.0f));
 
         glBindVertexArray(VAO1);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
