@@ -198,10 +198,13 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //##############################################################################################################
 
+        rotate += 1;
+        rotate = static_cast<float>(static_cast<int>(rotate) % 360);
+
         glm::mat4 model(1.0f);
-        glm::translate(model, translate);
-        glm::rotate(model, rotate, up);
-        glm::scale(model, scale);
+        model = glm::translate(model, translate);
+        model = glm::rotate(model, glm::radians(rotate), up);
+        model = glm::scale(model, scale);
 //        model = glm::mat4(1.0f);
 
         glm::mat4 view = glm::lookAt(cameraPosition, cameraTarget, up);
