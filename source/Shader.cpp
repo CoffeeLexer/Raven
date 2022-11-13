@@ -8,97 +8,103 @@
 
 #include "Shader.h"
 
-static std::unordered_map<std::string, GLenum> const stringToShaderType = {
-        {"vert", GL_VERTEX_SHADER},
-        {"frag", GL_FRAGMENT_SHADER},
-        {"tesc", GL_TESS_CONTROL_SHADER},
-        {"tese", GL_TESS_EVALUATION_SHADER},
-        {"geom", GL_GEOMETRY_SHADER},
-        {"comp", GL_COMPUTE_SHADER}
-};
+namespace Raven {
+    static std::unordered_map<std::string, GLenum> const stringToShaderType = {
+            {"vert", GL_VERTEX_SHADER},
+            {"frag", GL_FRAGMENT_SHADER},
+            {"tesc", GL_TESS_CONTROL_SHADER},
+            {"tese", GL_TESS_EVALUATION_SHADER},
+            {"geom", GL_GEOMETRY_SHADER},
+            {"comp", GL_COMPUTE_SHADER}
+    };
 
-Shader::Shader() {
-    shaderProgram = glCreateProgram();
-}
+    Shader::Shader() {
+        shaderProgram = glCreateProgram();
+    }
 
-Shader::~Shader() {
-    glDeleteProgram(shaderProgram);
-}
+    Shader::~Shader() {
+        glDeleteProgram(shaderProgram);
+    }
 
-void Shader::add(const std::string &path) {
-    GLenum shaderType;
-    try {
+    void Shader::add(const std::string &path) {
+        GLenum shaderType;
+#ifdef DEBUG
+        try {
+            shaderType = stringToShaderType.at(Raven::FileSystem::getExtension(path));
+        }
+        catch (const std::exception &e) {
+            std::string error = "ERROR::SHADER::ADD::EXTENSION\n\tIncompatible file extension: ";
+            error.append(path);
+            throw std::runtime_error(error);
+        }
+#else
         shaderType = stringToShaderType.at(Raven::FileSystem::getExtension(path));
-    }
-    catch (const std::exception &e) {
-        std::string error = "ERROR::SHADER::ADD::EXTENSION\n\tIncompatible file extension: ";
-        error.append(path);
-        throw std::runtime_error(error);
-    }
+#endif
+        std::ifstream file;
+        file.open(path);
+#ifdef DEBUG
+        if(file.bad()) {
+            std::string error = "ERROR::SHADER:ADD::FILE\n\tCould not open the file: ";
+            error.append(path);
+            throw std::runtime_error(error);
+        }
+#endif
+        std::string str;
 
-    std::ifstream file;
-    file.open(path);
+        file.seekg(0, std::ios::end);
+        str.reserve(file.tellg());
+        file.seekg(0, std::ios::beg);
 
-    if(file.bad()) {
-        std::string error = "ERROR::SHADER:ADD::FILE\n\tCould not open the file: ";
-        error.append(path);
-        throw std::runtime_error(error);
-    }
+        str.assign((std::istreambuf_iterator<char>(file)),
+                   std::istreambuf_iterator<char>());
 
-    std::string str;
+        file.close();
 
-    file.seekg(0, std::ios::end);
-    str.reserve(file.tellg());
-    file.seekg(0, std::ios::beg);
+        const char* source = str.c_str();
 
-    str.assign((std::istreambuf_iterator<char>(file)),
-               std::istreambuf_iterator<char>());
-
-    file.close();
-
-    const char* source = str.c_str();
-
-    unsigned int shader = glCreateShader(shaderType);
-    glShaderSource(shader, 1, &source, nullptr);
-    glCompileShader(shader);
-
-    int params;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &params);
-    if (!params)
-    {
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &params);
-        char infoLog[params];
-        glGetShaderInfoLog(shader, params, nullptr, infoLog);
-        std::string error = "ERROR::SHADER::ADD::COMPILATION_FAILED\n";
-        error.append(infoLog);
-        throw std::runtime_error(error);
+        unsigned int shader = glCreateShader(shaderType);
+        glShaderSource(shader, 1, &source, nullptr);
+        glCompileShader(shader);
+#ifdef DEBUG
+        int params;
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &params);
+        if (!params)
+        {
+            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &params);
+            char infoLog[params];
+            glGetShaderInfoLog(shader, params, nullptr, infoLog);
+            std::string error = "ERROR::SHADER::ADD::COMPILATION_FAILED\n";
+            error.append(infoLog);
+            throw std::runtime_error(error);
+        }
+#endif
+        glAttachShader(shaderProgram, shader);
+        glDeleteShader(shader);
     }
 
-    glAttachShader(shaderProgram, shader);
-    glDeleteShader(shader);
-}
-
-void Shader::build() const {
-    glLinkProgram(shaderProgram);
-
-    int params;
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &params);
-    if (!params) {
-        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &params);
-        char infoLog[params];
-        glGetProgramInfoLog(shaderProgram, params, nullptr, infoLog);
-        std::string error = "ERROR::SHADER::BUILD::LINKING_FAILED\n";
-        error.append(infoLog);
-        throw std::runtime_error(error);
+    void Shader::build() const {
+        glLinkProgram(shaderProgram);
+#ifdef DEBUG
+        int params;
+        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &params);
+        if (!params) {
+            glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &params);
+            char infoLog[params];
+            glGetProgramInfoLog(shaderProgram, params, nullptr, infoLog);
+            std::string error = "ERROR::SHADER::BUILD::LINKING_FAILED\n";
+            error.append(infoLog);
+            throw std::runtime_error(error);
+        }
+#endif
     }
-}
 
-unsigned int Shader::detach() {
-    unsigned int result = shaderProgram;
-    shaderProgram = 0;
-    return result;
-}
+    unsigned int Shader::detach() {
+        unsigned int result = shaderProgram;
+        shaderProgram = 0;
+        return result;
+    }
 
-void Shader::use() const {
-    glUseProgram(shaderProgram);
+    void Shader::use() const {
+        glUseProgram(shaderProgram);
+    }
 }

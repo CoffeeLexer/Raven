@@ -5,12 +5,15 @@ project(Raven VERSION 0.0.1)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXE_LINKER_FLAGS "")
 
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
+
 #   find and add all source files
 set(SOURCE_PATH source)
 file(GLOB_RECURSE PROJECT_SOURCES ${SOURCE_PATH}/*.cpp)
 file(GLOB_RECURSE PROJECT_HEADERS ${SOURCE_PATH}/*.h)
 
-add_executable(${PROJECT_NAME} main.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS} source/Window.cpp source/Window.h source/glfwCallbacks.h source/Camera.h source/Shader.cpp source/Shader.h source/FileSystem.cpp source/FileSystem.h)
+add_executable(${PROJECT_NAME} main.cpp ${PROJECT_SOURCES} ${PROJECT_HEADERS})
 
 #   github.com/Dav1dde/glad
 add_subdirectory(external/glad)
@@ -27,6 +30,17 @@ add_subdirectory(external/glfw)
 target_include_directories(${PROJECT_NAME} PRIVATE external/glfw/include)
 target_link_directories(${PROJECT_NAME} PRIVATE external/glfw/src)
 target_link_libraries(${PROJECT_NAME} glfw)
+
+# github.com/ocornut/imgui.git
+file(GLOB IMGUI_SOURCES "external/imgui/*.cpp")
+file(GLOB IMGUI_HEADERS "external/imgui/*.h")
+add_library(IMGUI ${IMGUI_SOURCES} ${IMGUI_HEADERS} external/imgui/backends/imgui_impl_glfw.cpp external/imgui/backends/imgui_impl_opengl3.cpp)
+
+target_include_directories(IMGUI PUBLIC external/imgui)
+target_include_directories(IMGUI PUBLIC . .. external/imgui/backends)
+
+target_link_libraries(${PROJECT_NAME} IMGUI)
+
 
 #   github.com/g-truc/glm
 add_subdirectory(external/glm)
