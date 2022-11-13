@@ -2,12 +2,22 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
+
 
 #include <iostream>
+#include <unordered_map>
+#include <unordered_set>
+
+
 #include "external/imgui/imgui.h"
 #include "external/imgui/backends/imgui_impl_glfw.h"
 #include "external/imgui/backends/imgui_impl_opengl3.h"
@@ -21,6 +31,24 @@ void processInput(GLFWwindow *window);
 
 unsigned int SCR_WIDTH = 800;
 unsigned int SCR_HEIGHT = 600;
+
+struct Vertex {
+    glm::vec3 pos;
+    glm::vec2 texCoord;
+
+    bool operator==(const Vertex& other) const {
+        return pos == other.pos && texCoord == other.texCoord;
+    }
+};
+
+namespace std {
+    template<> struct hash<Vertex> {
+        size_t operator()(Vertex const& vertex) const {
+            return (hash<glm::vec3>()(vertex.pos) >> 1) ^
+                   (hash<glm::vec2>()(vertex.texCoord) << 1);
+        }
+    };
+}
 
 int main()
 {
@@ -63,6 +91,10 @@ int main()
         return -1;
     }
 
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glDepthFunc(GL_LESS);
+
     // INIT IMGUI
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -72,27 +104,81 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    float vertices[] = {
-            0.5f,  0.5f, -1.0f, 1.0f, 1.0f,
-            0.5f, -0.5f, -1.0f, 1.0f, 0.0f,
-            -0.5f, -0.5f, +1.0f, 0.0f, 0.0f,
-            -0.5f,  0.5f, +1.0f, 0.0f, 1.0f
+    // Load Model
+    const char* MODEL_PATH = "assets/objects/box_01/object.obj";
+
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH)) {
+        throw std::runtime_error(warn + err);
+    }
+
+    std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+
+    for (const auto& shape : shapes) {
+        for (const auto& index : shape.mesh.indices) {
+            Vertex vertex{};
+
+            vertex.pos = {
+                    attrib.vertices[3 * index.vertex_index + 0],
+                    attrib.vertices[3 * index.vertex_index + 1],
+                    attrib.vertices[3 * index.vertex_index + 2]
+            };
+
+            vertex.texCoord = {
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+            };
+
+//            if (uniqueVertices.count(vertex) == 0) {
+//                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+//                vertices.push_back(vertex);
+//            }
+
+            vertices.push_back(vertex);
+//            indices.push_back(uniqueVertices[vertex]);
+            indices.push_back(vertices.size());
+        }
+    }
+
+    printf("Vert: %zu\n", vertices.size());
+    printf("Indi: %zu\n", indices.size());
+
+    float rawVertices[] = {
+            0.5f,  0.5f, -1.0f,
+            0.5f, -0.5f, -1.0f,
+            -0.5f, -0.5f, +1.0f,
+            -0.5f,  0.5f, +1.0f
     };
-    unsigned int indices[] = {
+    float textureCoordinates[] = {
+            1.0f, 1.0f,
+            1.0f, 0.0f,
+            0.0f, 0.0f,
+            0.0f, 1.0f
+    };
+    unsigned int rawIndices[] = {
             0, 1, 3,
             1, 2, 3
     };
     unsigned int indices2[] = {
             1, 2, 3
     };
-    unsigned int VBO; // Vertex buffer object => vertices locations
+    unsigned int VBO_position; // Vertex buffer object => rawVertices locations
+    unsigned int VBO_texture; // Vertex buffer object => rawVertices locations
     unsigned int VAO1; // Vertex array object => Relations between GPU buffers
     unsigned int EBO; // Element array buffer => Indexation order of vertex buffer
 
     // generate vertex array
     glGenVertexArrays(1, &VAO1);
     // generate any buffer
-    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &VBO_position);
+    //glGenBuffers(1, &VBO_texture);
     // generate any buffer
     glGenBuffers(1, &EBO);
 
@@ -100,34 +186,23 @@ int main()
     glBindVertexArray(VAO1);
 
     // bind vertex buffer object and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_position);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<long>(vertices.size()), vertices.data(), GL_STATIC_DRAW);
 
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(3 * sizeof(float)));
+
+//    glBindBuffer(GL_ARRAY_BUFFER, VBO_texture);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordinates), textureCoordinates, GL_STATIC_DRAW);
+
+//    glEnableVertexAttribArray(1);
+//    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
     // bind element array buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<long>(indices.size()), indices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    glBindVertexArray(0);
-
-    unsigned int VAO2;
-    glGenVertexArrays(1, &VAO2);
-    glBindVertexArray(VAO2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    unsigned int EBO2;
-    glGenBuffers(1, &EBO2);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO2);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices2), indices2, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
     glBindVertexArray(0);
 
     Raven::Shader s1 = Raven::Shader();
@@ -157,7 +232,7 @@ int main()
     glm::vec3 scale(1.0f, 1.0f, 1.0f);
 
     // View
-    glm::vec3 cameraPosition = glm::vec3(4.0f, 3.0f, 3.0f);
+    glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
     glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -165,6 +240,7 @@ int main()
     float fov = 45;
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    bool isRotating = true;
     bool a = true;
     while (!glfwWindowShouldClose(window))
     {
@@ -181,6 +257,8 @@ int main()
             ImGui::Text("Model Matrix");
             ImGui::InputFloat3("Scale", glm::value_ptr(scale), "%.2f", 0);
             ImGui::InputFloat("Rotate", &rotate, 0.0f, 0.0f, "%.2f", 0);
+            ImGui::SameLine();
+            ImGui::Checkbox("Auto Rotate", &isRotating);
             ImGui::InputFloat3("Translate", glm::value_ptr(translate), "%.2f", 0);
 
             ImGui::Text("View Matrix");
@@ -198,14 +276,15 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //##############################################################################################################
 
-        rotate += 1;
-        rotate = static_cast<float>(static_cast<int>(rotate) % 360);
+        if(isRotating) {
+            rotate += 1;
+            rotate = static_cast<float>(static_cast<int>(rotate) % 360);
+        }
 
         glm::mat4 model(1.0f);
         model = glm::translate(model, translate);
         model = glm::rotate(model, glm::radians(rotate), up);
         model = glm::scale(model, scale);
-//        model = glm::mat4(1.0f);
 
         glm::mat4 view = glm::lookAt(cameraPosition, cameraTarget, up);
 
@@ -218,7 +297,7 @@ int main()
 //        s2.set(glm::mat4(1.0f));
 
         glBindVertexArray(VAO1);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -228,7 +307,7 @@ int main()
 
     // Shutdown system
     glDeleteVertexArrays(1, &VAO1);
-    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &VBO_position);
     glDeleteBuffers(1, &EBO);
 
     ImGui_ImplGlfw_Shutdown();
@@ -247,4 +326,6 @@ void processInput(GLFWwindow *window)
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+    SCR_HEIGHT = height;
+    SCR_WIDTH = width;
 }
