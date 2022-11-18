@@ -27,7 +27,7 @@
 #include "source/Texture.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow *window);
+void process_input(GLFWwindow *window);
 
 unsigned int SCR_WIDTH = 800;
 unsigned int SCR_HEIGHT = 600;
@@ -56,7 +56,7 @@ int main()
     glfwInit();
 #ifdef DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-    glfwWindowHint(GLFW_CONTEXT_NO_ERROR, GLFW_TRUE);
+    glfwWindowHint(GLFW_CONTEXT_NO_ERROR, GLFW_FALSE);
 #else
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_FALSE);
     glfwWindowHint(GLFW_CONTEXT_NO_ERROR, GLFW_FALSE);
@@ -92,7 +92,7 @@ int main()
     }
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);
 
     // INIT IMGUI
@@ -102,7 +102,7 @@ int main()
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui_ImplOpenGL3_Init("#version 460");
 
     // Load Model
     const char* MODEL_PATH = "assets/objects/box_01/object.obj";
@@ -125,16 +125,12 @@ int main()
         for (const auto& index : shape.mesh.indices) {
             Vertex vertex{};
 
-            vertex.pos = {
-                    attrib.vertices[3 * index.vertex_index + 0],
-                    attrib.vertices[3 * index.vertex_index + 1],
-                    attrib.vertices[3 * index.vertex_index + 2]
-            };
+            vertex.pos[0] = attrib.vertices[3 * index.vertex_index + 0];
+            vertex.pos[1] = attrib.vertices[3 * index.vertex_index + 1];
+            vertex.pos[2] = attrib.vertices[3 * index.vertex_index + 2];
 
-            vertex.texCoord = {
-                    attrib.texcoords[2 * index.texcoord_index + 0],
-                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-            };
+            vertex.texCoord[0] = attrib.texcoords[2 * index.texcoord_index + 0];
+            vertex.texCoord[1] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
 
 //            if (uniqueVertices.count(vertex) == 0) {
 //                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
@@ -147,15 +143,23 @@ int main()
         }
     }
 
-    printf("Vert: %zu\n", vertices.size());
-    printf("Indi: %zu\n", indices.size());
+    float rawVertices[vertices.size() * 5];
+    int i = 0;
+    for(const Vertex& v : vertices) {
+        rawVertices[i * 5 + 0] = v.pos[0];
+        rawVertices[i * 5 + 1] = v.pos[1];
+        rawVertices[i * 5 + 2] = v.pos[2];
+        rawVertices[i * 5 + 3] = v.texCoord[0];
+        rawVertices[i * 5 + 4] = v.texCoord[1];
+        i++;
+    }
 
-    float rawVertices[] = {
-            0.5f,  0.5f, -1.0f,
-            0.5f, -0.5f, -1.0f,
-            -0.5f, -0.5f, +1.0f,
-            -0.5f,  0.5f, +1.0f
-    };
+//    float rawVertices[] = {
+//            0.5f,  0.5f, -1.0f,
+//            0.5f, -0.5f, -1.0f,
+//            -0.5f, -0.5f, +1.0f,
+//            -0.5f,  0.5f, +1.0f
+//    };
     float textureCoordinates[] = {
             1.0f, 1.0f,
             1.0f, 0.0f,
@@ -169,30 +173,31 @@ int main()
     unsigned int indices2[] = {
             1, 2, 3
     };
-    unsigned int VBO_position; // Vertex buffer object => rawVertices locations
-    unsigned int VBO_texture; // Vertex buffer object => rawVertices locations
-    unsigned int VAO1; // Vertex array object => Relations between GPU buffers
+    unsigned int VBO; // Vertex buffer object => rawVertices locations
+    unsigned int VAO; // Vertex array object => Relations between GPU buffers
     unsigned int EBO; // Element array buffer => Indexation order of vertex buffer
 
     // generate vertex array
-    glGenVertexArrays(1, &VAO1);
+    glGenVertexArrays(1, &VAO);
+    // bind vertex array buffer
+    glBindVertexArray(VAO);
     // generate any buffer
-    glGenBuffers(1, &VBO_position);
-    //glGenBuffers(1, &VBO_texture);
+    glGenBuffers(1, &VBO);
     // generate any buffer
     glGenBuffers(1, &EBO);
 
-    // bind vertex array buffer
-    glBindVertexArray(VAO1);
 
     // bind vertex buffer object and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, VBO_position);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<long>(vertices.size()), vertices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices.front()), &vertices.data()[0], GL_STATIC_DRAW);
 
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(3 * sizeof(float)));
+
+//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(baseOffset + offsetof(Vertex, pos)));
+//    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(baseOffset + offsetof(Vertex, texCoord)));
 
 //    glBindBuffer(GL_ARRAY_BUFFER, VBO_texture);
 //    glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordinates), textureCoordinates, GL_STATIC_DRAW);
@@ -201,7 +206,9 @@ int main()
 //    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
     // bind element array buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<long>(indices.size()), indices.data(), GL_STATIC_DRAW);
+//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<long>(indices.size()), indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
+
 
     glBindVertexArray(0);
 
@@ -245,7 +252,7 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        processInput(window);
+        process_input(window);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -296,8 +303,8 @@ int main()
         s2.set(mvp);
 //        s2.set(glm::mat4(1.0f));
 
-        glBindVertexArray(VAO1);
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -306,8 +313,8 @@ int main()
     }
 
     // Shutdown system
-    glDeleteVertexArrays(1, &VAO1);
-    glDeleteBuffers(1, &VBO_position);
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
 
     ImGui_ImplGlfw_Shutdown();
@@ -317,7 +324,7 @@ int main()
     return 0;
 }
 
-void processInput(GLFWwindow *window)
+void process_input(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
