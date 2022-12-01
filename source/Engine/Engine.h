@@ -4,12 +4,12 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 
-class Engine {
-    GLFWwindow* mWindow;
-    std::pair<uint, uint> mDimensions;
-public:
+namespace Raven {
+    class Engine {
 
+    public:
 
 };
+}
 
 #endif //RAVEN_ENGINE_H

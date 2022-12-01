@@ -12,11 +12,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-
 #include <iostream>
 #include <unordered_map>
-#include <unordered_set>
-
 
 #include "external/imgui/imgui.h"
 #include "external/imgui/backends/imgui_impl_glfw.h"
@@ -25,9 +22,32 @@
 #include "source/Shader.h"
 #include "source/Image.h"
 #include "source/Texture.h"
+#include "source/Controls/Mouse.h"
+#include "source/Window.h"
+#include "source/Callbacks.h"
+#include "source/Callback.h"
+#include "source/TypeID.h"
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void process_input(GLFWwindow *window);
+void framebuffer_size_callback1(GLFWwindow* window, int width, int height) {
+    printf("Callback function 1: %i, %i\n", width, height);
+}
+void framebuffer_size_callback1(GLFWwindow* window, int width) {
+    printf("Callback function 1: %i\n", width);
+}
+void framebuffer_size_callback2(GLFWwindow* window, int width, int height) {
+    printf("Callback function 2: %i, %i\n", width, height);
+}
+
+#define LOG_KEYBOARD
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+//  #define LOG_MOUSE_SCROLL
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
+#define LOG_MOUSE_BUTTON
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+void cursor_enter_callback(GLFWwindow* window, int entered);
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 
 unsigned int SCR_WIDTH = 800;
 unsigned int SCR_HEIGHT = 600;
@@ -50,39 +70,36 @@ namespace std {
     };
 }
 
+void myFunc(int i) {
+    printf("my: %i\n", i);
+}
+
 int main()
 {
-    // Init glfw
-    glfwInit();
-#ifdef DEBUG
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-    glfwWindowHint(GLFW_CONTEXT_NO_ERROR, GLFW_FALSE);
-#else
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_FALSE);
-    glfwWindowHint(GLFW_CONTEXT_NO_ERROR, GLFW_FALSE);
-#endif
-    glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
-    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
-    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // MAC OS
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    Raven::Window myWindow = {"Engine", 800, 600};
+    myWindow.setHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+    myWindow.create();
+    myWindow.setContextCurrent();
 
-    // Create GLFW Window
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Project Raven", nullptr, nullptr);
-    if (window == nullptr)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
+    int xxx = 0;
 
-    // Setup callbacks
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE); // PRESS-HOLD = 1 press, no refresh
+    Raven::Callbacks callbacks = {};
+
+    callbacks.append<GLFWframebuffersizefun>(Raven::Callbacks::Types::FramebufferSize, [&](GLFWwindow *window, int width, int height){
+        printf("XXX: %i, W: %i, H: %i\n", xxx++, width, height);
+    });
+
+    callbacks.bind(myWindow.ptr());
+
+//    // Setup callbacks
+//    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+//    glfwSetKeyCallback(window, key_callback);
+//    glfwSetCursorEnterCallback(window, cursor_enter_callback);
+//    //glfwSetCursorPosCallback(window, cursor_position_callback);
+//
+//    Raven::Mouse mouse = {window};
+//
+//    glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE); // PRESS-HOLD = 1 press, no refresh
 
     // Bind glad
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -92,7 +109,8 @@ int main()
     }
 
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_TEXTURE_2D);
     glDepthFunc(GL_LESS);
 
     // INIT IMGUI
@@ -101,11 +119,11 @@ int main()
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(myWindow.ptr(), true);
     ImGui_ImplOpenGL3_Init("#version 460");
 
     // Load Model
-    const char* MODEL_PATH = "assets/objects/box_01/object.obj";
+    const char* MODEL_PATH = "assets/objects/viking/viking_room.obj";
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
@@ -130,49 +148,23 @@ int main()
             vertex.pos[2] = attrib.vertices[3 * index.vertex_index + 2];
 
             vertex.texCoord[0] = attrib.texcoords[2 * index.texcoord_index + 0];
-            vertex.texCoord[1] = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
+            vertex.texCoord[1] = attrib.texcoords[2 * index.texcoord_index + 1];
 
 //            if (uniqueVertices.count(vertex) == 0) {
 //                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
 //                vertices.push_back(vertex);
 //            }
 
+            indices.push_back(vertices.size());
             vertices.push_back(vertex);
 //            indices.push_back(uniqueVertices[vertex]);
-            indices.push_back(vertices.size());
         }
     }
 
-    float rawVertices[vertices.size() * 5];
-    int i = 0;
-    for(const Vertex& v : vertices) {
-        rawVertices[i * 5 + 0] = v.pos[0];
-        rawVertices[i * 5 + 1] = v.pos[1];
-        rawVertices[i * 5 + 2] = v.pos[2];
-        rawVertices[i * 5 + 3] = v.texCoord[0];
-        rawVertices[i * 5 + 4] = v.texCoord[1];
-        i++;
-    }
+    std::cout << indices.size() << std::endl;
+    std::cout << vertices.size() << std::endl;
 
-//    float rawVertices[] = {
-//            0.5f,  0.5f, -1.0f,
-//            0.5f, -0.5f, -1.0f,
-//            -0.5f, -0.5f, +1.0f,
-//            -0.5f,  0.5f, +1.0f
-//    };
-    float textureCoordinates[] = {
-            1.0f, 1.0f,
-            1.0f, 0.0f,
-            0.0f, 0.0f,
-            0.0f, 1.0f
-    };
-    unsigned int rawIndices[] = {
-            0, 1, 3,
-            1, 2, 3
-    };
-    unsigned int indices2[] = {
-            1, 2, 3
-    };
+
     unsigned int VBO; // Vertex buffer object => rawVertices locations
     unsigned int VAO; // Vertex array object => Relations between GPU buffers
     unsigned int EBO; // Element array buffer => Indexation order of vertex buffer
@@ -196,17 +188,7 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(baseOffset + offsetof(Vertex, pos)));
-//    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), reinterpret_cast<void*>(baseOffset + offsetof(Vertex, texCoord)));
-
-//    glBindBuffer(GL_ARRAY_BUFFER, VBO_texture);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordinates), textureCoordinates, GL_STATIC_DRAW);
-
-//    glEnableVertexAttribArray(1);
-//    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    // bind element array buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<long>(indices.size()), indices.data(), GL_STATIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
 
 
@@ -219,16 +201,7 @@ int main()
 
     Raven::Shader s2("assets/shaders/sources/simple/shader.vert", "assets/shaders/sources/simple/shader.frag");
 
-    Raven::Image img("assets/images/wood.jpg");
-
-//
-//    const float radius = 10.0f;
-//    float camX = sin(glfwGetTime()) * radius;
-//    float camZ = cos(glfwGetTime()) * radius;
-//    glm::mat4 view;
-//    view = glm::lookAt(glm::vec3(camX, 0.0, camZ), cameraTarget, up);
-
-    Raven::Texture tex("assets/images/wood.jpg");
+    Raven::Texture tex("assets/objects/viking/viking_room.png");
 
     glActiveTexture(GL_TEXTURE0);
     tex.use();
@@ -249,10 +222,9 @@ int main()
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     bool isRotating = true;
     bool a = true;
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(myWindow.ptr()))
     {
         glfwPollEvents();
-        process_input(window);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -304,12 +276,12 @@ int main()
 //        s2.set(glm::mat4(1.0f));
 
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         //##############################################################################################################
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(myWindow.ptr());
     }
 
     // Shutdown system
@@ -324,15 +296,45 @@ int main()
     return 0;
 }
 
-void process_input(GLFWwindow *window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-}
-
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
     SCR_HEIGHT = height;
     SCR_WIDTH = width;
 }
+
+//  Mods:
+//      Shift   : 1 -> 0000 0001
+//      Ctrl    : 2 -> 0000 0010
+//      Alt     : 4 -> 0000 0100
+//  Actions:
+//      Released    : 0
+//      Pressed     : 1
+//      Held        : 2
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+#ifdef LOG_KEYBOARD
+    printf("KEYBOARD::KEY\n\tKey: %i, Scancode: %i, Action: %i, Mods: %i\n", key, scancode, action, mods);
+#endif
+
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_TRUE)
+    {
+        glfwSetWindowShouldClose(window, true);
+    }
+}
+
+void character_callback(GLFWwindow* window, unsigned int codepoint);
+
+//  UPPER-LEFT = 0,0
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    printf("CURSOR::POSITION\n\tX: %.3f, Y: %.3f\n", xpos, ypos);
+}
+
+void cursor_enter_callback(GLFWwindow* window, int entered)
+{
+    printf("CURSOR::ENTER\n\tEntered: %i\n", entered);
+}
+
+void joystick_callback(int jid, int event);
+void drop_callback(GLFWwindow* window, int count, const char** paths);

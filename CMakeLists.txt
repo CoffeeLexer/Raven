@@ -112,8 +112,16 @@ add_dependencies(${PROJECT_NAME} TARGET_SHADERS)
 file(GLOB_RECURSE ASSETS RELATIVE ${CMAKE_SOURCE_DIR} "assets/*.*")
 foreach(ASSET ${ASSETS})
     message(STATUS ${ASSET})
-    file(GENERATE OUTPUT ${ASSET} INPUT ${ASSET})
+#    file(GENERATE OUTPUT ${ASSET} INPUT ${ASSET})
 endforeach()
+
+# TODO: Make this more effective than brute copy
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${PROJECT_SOURCE_DIR}/assets
+        ${PROJECT_BINARY_DIR}/assets
+        COMMENT "Copying assets/ files")
+
 
 
 ##   prerequisites for CPack

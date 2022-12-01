@@ -13,8 +13,8 @@ namespace Raven {
         unsigned int _id;
     public:
         Texture();
-        Texture(std::__cxx11::basic_string<char> path);
-        void use();
+        Texture(std::string path);
+        void use() const;
     };
 
 } // Raven
