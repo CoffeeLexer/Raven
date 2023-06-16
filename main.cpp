@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#include "source/Window.h"
+
 const char* kVertSource = R"GLSL(
 #version 400 core
 layout (location = 0) in vec2 inPosition;
@@ -39,9 +41,12 @@ const unsigned int kIndices[] = {
         0, 1, 2
 };
 
+#include <tiny_obj_loader.h>
+
 int main()
 {
     std::cout << "Start of execution\n";
+    
 
     glfwInit();
 
@@ -53,6 +58,8 @@ int main()
 
     GLFWwindow *window = glfwCreateWindow(250, 250, "Window", nullptr, nullptr);
     glfwMakeContextCurrent(window);
+
+    //glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
 
     gladLoadGL(glfwGetProcAddress);
 
