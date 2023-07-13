@@ -36,3 +36,12 @@ build
 
 # IDEs
 .idea/
+
+# Apple
+.DS_Store
+
+# Build directory
+build
+
+# Libraries
+external
