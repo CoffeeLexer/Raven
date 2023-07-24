@@ -87,11 +87,11 @@ void Engine::createInstance()
     createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
 
-    createInfo.enabledExtensionCount = requiredExtensions.size();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
     createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
 #ifndef NDEBUG
-    createInfo.enabledLayerCount = validationLayers.size();
+    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
     createInfo.ppEnabledLayerNames = validationLayers.data();
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
@@ -664,13 +664,15 @@ void Engine::destroyCommandPool()
 
 void Engine::createCommandBuffer()
 {
+    commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
+    allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
-    if (VkResult result = vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer); result != VK_SUCCESS)
+    if (VkResult result = vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()); result != VK_SUCCESS)
     {
         std::cerr << "ALLOC COMMAND BUFFER: " << result << std::endl;
         throw std::runtime_error("FATAL CRASH");
@@ -732,6 +734,10 @@ void Engine::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
 
 void Engine::createSyncObjects()
 {
+    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -739,60 +745,67 @@ void Engine::createSyncObjects()
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (VkResult result = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore); result != VK_SUCCESS)
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        std::cerr << "CREATE IMAGE SEMAPHORE FAILED: " << result << std::endl;
-        throw std::runtime_error("FATAL CRASH");
-    }
 
-    if (VkResult result = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore); result != VK_SUCCESS)
-    {
-        std::cerr << "CREATE RENDER SEMAPHORE FAILED: " << result << std::endl;
-        throw std::runtime_error("FATAL CRASH");
-    }
+        if (VkResult result = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]); result != VK_SUCCESS)
+        {
+            std::cerr << "CREATE IMAGE SEMAPHORE FAILED: " << result << std::endl;
+            throw std::runtime_error("FATAL CRASH");
+        }
 
-    if (VkResult result = vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence); result != VK_SUCCESS)
-    {
-        std::cerr << "CREATE FENCE FAILED: " << result << std::endl;
-        throw std::runtime_error("FATAL CRASH");
+        if (VkResult result = vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]); result != VK_SUCCESS)
+        {
+            std::cerr << "CREATE RENDER SEMAPHORE FAILED: " << result << std::endl;
+            throw std::runtime_error("FATAL CRASH");
+        }
+
+        if (VkResult result = vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]); result != VK_SUCCESS)
+        {
+            std::cerr << "CREATE FENCE FAILED: " << result << std::endl;
+            throw std::runtime_error("FATAL CRASH");
+        }
     }
 }
 
 void Engine::destroySyncObjects()
 {
-    vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-    vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-    vkDestroyFence(device, inFlightFence, nullptr);
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+        vkDestroyFence(device, inFlightFences[i], nullptr);
+    }
 }
 
 void Engine::drawFrame()
 {
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-    vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(device, 1, &inFlightFence);
+    vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences(device, 1, &inFlightFences[currentFrame]);
 
-    vkResetCommandBuffer(commandBuffer, 0);
-    recordCommandBuffer(commandBuffer, imageIndex);
+    vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+    recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence); result != VK_SUCCESS)
+    if (VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]); result != VK_SUCCESS)
     {
         std::cerr << "SUBMIT COMMANDS FAILED: " << result << std::endl;
         throw std::runtime_error("FATAL CRASH");
@@ -817,4 +830,6 @@ void Engine::drawFrame()
     presentInfo.pImageIndices = &imageIndex;
 
     vkQueuePresentKHR(graphicsQueue, &presentInfo);
+
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }

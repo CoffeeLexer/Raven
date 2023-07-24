@@ -24,6 +24,8 @@ const std::vector<const char*> deviceExtensions =
     "VK_KHR_portability_subset",
 };
 
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
 struct QueueFamilyDetails
 {
     std::optional<uint32_t> graphicsFamily;
@@ -68,13 +70,14 @@ class Engine
     VkPipeline graphicsPipeline;
     std::vector<VkFramebuffer> swapChainFramebuffers;
     VkCommandPool commandPool;
-    VkCommandBuffer commandBuffer;
-    VkSemaphore imageAvailableSemaphore;
-    VkSemaphore renderFinishedSemaphore;
-    VkFence inFlightFence;
+    std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
 
     GLFWwindow* window;
     std::vector<const char*> requiredExtensions;
+    uint32_t currentFrame = 0;
 
     void queueRequiredExtensions();
     bool isValidationLayerSupported();
