@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "source/engine.hpp"
+#include "source/example/example.hpp"
 
 namespace options {
     const uint32_t WIDTH = 800;

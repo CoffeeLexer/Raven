@@ -3,4 +3,5 @@
 namespace example
 {
     void opengl();
+    void metal();
 }

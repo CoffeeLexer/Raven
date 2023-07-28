@@ -4,6 +4,8 @@ project(Raven C CXX)
 set(CMAKE_CXX_STANDARD 23)
 
 find_package(Vulkan REQUIRED)
+find_library(QuartzCore_Library QuartzCore)
+find_library(Metal_Library Metal)
 
 add_subdirectory(external/glfw EXCLUDE_FROM_ALL)
 
@@ -13,7 +15,7 @@ add_subdirectory("${GLAD_SOURCES_DIR}/cmake" glad_cmake)
 glad_add_library(glad_opengl REPRODUCIBLE LOADER API gl:core=4.0)
 glad_add_library(glad_vulkan REPRODUCIBLE LOADER API vulkan=1.0)
 
-add_executable(${PROJECT_NAME} main.cpp source/example/example.hpp source/example/opengl.cpp source/engine.hpp source/engine/engine.cpp source/engine/queue_family_details.cpp source/engine/swapchain_details.cpp source/engine/shader.cpp)
+add_executable(${PROJECT_NAME} main.cpp source/example/example.hpp source/example/opengl.cpp source/engine.hpp source/engine/engine.cpp source/engine/queue_family_details.cpp source/engine/swapchain_details.cpp source/engine/shader.cpp source/example/metal.mm)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad_opengl)
@@ -21,6 +23,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
 
 # Doesn't work on macOS
 target_link_libraries(${PROJECT_NAME} PRIVATE glad_vulkan)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${QuartzCore_Library})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${Metal_Library})
 
 configure_file(${CMAKE_SOURCE_DIR}/shader/binary/frag.spv ${CMAKE_BINARY_DIR}/shader/binary/frag.spv COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/shader/binary/vert.spv ${CMAKE_BINARY_DIR}/shader/binary/vert.spv COPYONLY)
