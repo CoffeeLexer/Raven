@@ -1,4 +1,13 @@
 cmake_minimum_required(VERSION 3.24)
+
+# SetUp Directory
+file (GLOB_RECURSE DS_STORE_FILES ${CMAKE_SOURCE_DIR}/*.DS_Store)
+foreach (E ${DS_STORE_FILES})
+    cmake_path (RELATIVE_PATH E BASE_DIRECTORY ${CMAKE_SOURCE_DIR} OUTPUT_VARIABLE R)
+    message (STATUS "REMOVING ${R}")
+    file (REMOVE ${E})
+endforeach ()
+
 project(Raven C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -27,6 +36,3 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad_vulkan)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${QuartzCore_Library})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Metal_Library})
-
-configure_file(${CMAKE_SOURCE_DIR}/shader/binary/frag.spv ${CMAKE_BINARY_DIR}/shader/binary/frag.spv COPYONLY)
-configure_file(${CMAKE_SOURCE_DIR}/shader/binary/vert.spv ${CMAKE_BINARY_DIR}/shader/binary/vert.spv COPYONLY)
