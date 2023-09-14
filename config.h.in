@@ -1,0 +1,1 @@
+#define FILE_PATH "@CMAKE_SOURCE_DIR@/"

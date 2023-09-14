@@ -12,6 +12,9 @@ project(Raven C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 
+set(FILE_PATH ${CMAKE_SOURCE_DIR})
+configure_file(config.h.in config.h)
+
 find_package(Vulkan REQUIRED)
 find_library(QuartzCore_Library QuartzCore)
 find_library(Metal_Library Metal)
@@ -28,6 +31,8 @@ file(GLOB_RECURSE SOURCE ${CMAKE_SOURCE_DIR}/source/*.cpp ${CMAKE_SOURCE_DIR}/so
 
 add_executable(${PROJECT_NAME} main.cpp ${SOURCE})
 
+target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}")
+
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad_opengl)
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
@@ -36,3 +41,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad_vulkan)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${QuartzCore_Library})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Metal_Library})
+
+file(GLOB_RECURSE SHADERS ${CMAKE_SOURCE_DIR}/shader/*)
+
+foreach (SHADER ${SHADERS})
+    file(RELATIVE_PATH OUT ${CMAKE_SOURCE_DIR} ${SHADER})
+    configure_file(${CMAKE_SOURCE_DIR}/${OUT} ${CMAKE_BINARY_DIR}/${OUT} COPYONLY)
+endforeach ()
+
