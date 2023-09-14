@@ -1,6 +1,16 @@
 [submodule "external/glfw"]
 	path = external/glfw
 	url = https://github.com/glfw/glfw
+	branch = 3.3.8
 [submodule "external/glad"]
 	path = external/glad
 	url = https://github.com/Dav1dde/glad
+	branch = v2.0.4
+[submodule "external/shaderc"]
+	path = external/shaderc
+	url = https://github.com/google/shaderc
+	branch = v2023.6
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui
+	branch = v1.89.9
