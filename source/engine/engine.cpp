@@ -9,6 +9,9 @@
 #include <limits>
 #include <algorithm>
 
+#include "shader.hpp"
+#include "config.h"
+
 VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
     switch (messageSeverity)
@@ -427,8 +430,8 @@ VkShaderModule Engine::createShaderModule(const std::vector<char>& source)
 
 void Engine::createGraphicsPipeline()
 {
-    auto vertSource = readFile("shader/binary/vert.spv");
-    auto fragSource = readFile("shader/binary/frag.spv");
+    auto vertSource = shader::load(SHADER("GLSL/simple.vert"));
+    auto fragSource = shader::load(SHADER("GLSL/simple.frag"));
 
     VkShaderModule vertShaderModule = createShaderModule(vertSource);
     VkShaderModule fragShaderModule = createShaderModule(fragSource);

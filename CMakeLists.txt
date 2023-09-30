@@ -13,6 +13,7 @@ project(Raven C CXX)
 set(CMAKE_CXX_STANDARD 23)
 
 set(FILE_PATH ${CMAKE_SOURCE_DIR})
+set(SHADER_PATH ${CMAKE_SOURCE_DIR}/shader/)
 configure_file(config.h.in config.h)
 
 find_package(Vulkan REQUIRED)
@@ -43,9 +44,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${QuartzCore_Library})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Metal_Library})
 
 file(GLOB_RECURSE SHADERS ${CMAKE_SOURCE_DIR}/shader/*)
-
-foreach (SHADER ${SHADERS})
-    file(RELATIVE_PATH OUT ${CMAKE_SOURCE_DIR} ${SHADER})
-    configure_file(${CMAKE_SOURCE_DIR}/${OUT} ${CMAKE_BINARY_DIR}/${OUT} COPYONLY)
-endforeach ()
 

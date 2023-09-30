@@ -1,1 +1,2 @@
 #define FILE_PATH "@CMAKE_SOURCE_DIR@/"
+#define SHADER(path) "@SHADER_PATH@" path
