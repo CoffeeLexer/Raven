@@ -75,6 +75,7 @@ class Engine
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
 
+    bool framebufferResized = false;
     GLFWwindow* window;
     std::vector<const char*> requiredExtensions;
     uint32_t currentFrame = 0;
@@ -117,8 +118,11 @@ class Engine
     // Not Required - Automatic deallocation
     // void destroyCommandBuffer();
 
+    void recreateSwapChain();
+
 public:
     void drawFrame();
+    void setFramebufferResized(bool);
 
     void create(GLFWwindow* win)
     {
