@@ -20,6 +20,7 @@ find_package(Vulkan REQUIRED)
 find_library(QuartzCore_Library QuartzCore)
 find_library(Metal_Library Metal)
 
+add_subdirectory(external/glm EXCLUDE_FROM_ALL)
 add_subdirectory(external/glfw EXCLUDE_FROM_ALL)
 
 set(GLAD_SOURCES_DIR "${PROJECT_SOURCE_DIR}/external/glad")
@@ -34,6 +35,7 @@ add_executable(${PROJECT_NAME} main.cpp ${SOURCE})
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}")
 
+target_link_libraries(${PROJECT_NAME} PRIVATE glm)
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad_opengl)
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
