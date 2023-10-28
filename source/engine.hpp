@@ -74,6 +74,8 @@ class Engine
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
 
     bool framebufferResized = false;
     GLFWwindow* window;
@@ -83,6 +85,7 @@ class Engine
     void queueRequiredExtensions();
     bool isValidationLayerSupported();
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     VkShaderModule createShaderModule(const std::vector<char>& source);
 
@@ -101,6 +104,7 @@ class Engine
     void createRenderPass();
     void createGraphicsPipeline();
     void createFramebuffers();
+    void createVertexBuffer();
     void createCommandPool();
     void createCommandBuffer();
 
@@ -113,6 +117,8 @@ class Engine
     void destroyRenderPass();
     void destroyGraphicsPipeline();
     void destroyFramebuffers();
+    void destroyVertexBuffer();
+    void destroyVertexBufferMemory();
     void destroyCommandPool();
 
     // Not Required - Automatic deallocation
@@ -140,6 +146,7 @@ public:
         createRenderPass();
         createGraphicsPipeline();
         createFramebuffers();
+        createVertexBuffer();
         createCommandPool();
         createCommandBuffer();
         createSyncObjects();
@@ -151,6 +158,8 @@ public:
 
         destroySyncObjects();
         destroyCommandPool();
+        destroyVertexBuffer();
+        destroyVertexBufferMemory();
         destroyFramebuffers();
         destroyGraphicsPipeline();
         destroyRenderPass();
