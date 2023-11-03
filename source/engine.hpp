@@ -125,6 +125,8 @@ class Engine
     // void destroyCommandBuffer();
 
     void recreateSwapChain();
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 public:
     void drawFrame();
@@ -146,8 +148,8 @@ public:
         createRenderPass();
         createGraphicsPipeline();
         createFramebuffers();
-        createVertexBuffer();
         createCommandPool();
+        createVertexBuffer();
         createCommandBuffer();
         createSyncObjects();
     }
