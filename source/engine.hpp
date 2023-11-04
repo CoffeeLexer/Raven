@@ -76,6 +76,8 @@ class Engine
     std::vector<VkFence> inFlightFences;
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
 
     bool framebufferResized = false;
     GLFWwindow* window;
@@ -105,6 +107,7 @@ class Engine
     void createGraphicsPipeline();
     void createFramebuffers();
     void createVertexBuffer();
+    void createIndexBuffer();
     void createCommandPool();
     void createCommandBuffer();
 
@@ -118,7 +121,7 @@ class Engine
     void destroyGraphicsPipeline();
     void destroyFramebuffers();
     void destroyVertexBuffer();
-    void destroyVertexBufferMemory();
+    void destroyIndexBuffer();
     void destroyCommandPool();
 
     // Not Required - Automatic deallocation
@@ -150,6 +153,7 @@ public:
         createFramebuffers();
         createCommandPool();
         createVertexBuffer();
+        createIndexBuffer();
         createCommandBuffer();
         createSyncObjects();
     }
@@ -160,8 +164,8 @@ public:
 
         destroySyncObjects();
         destroyCommandPool();
+        destroyIndexBuffer();
         destroyVertexBuffer();
-        destroyVertexBufferMemory();
         destroyFramebuffers();
         destroyGraphicsPipeline();
         destroyRenderPass();
