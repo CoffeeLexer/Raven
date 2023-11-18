@@ -65,6 +65,9 @@ class Engine
     std::vector<VkImageView> swapChainImageViews;
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSet> descriptorSets;
     VkPipelineLayout pipelineLayout;
     VkRenderPass renderPass;
     VkPipeline graphicsPipeline;
@@ -79,6 +82,10 @@ class Engine
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
 
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    std::vector<void*> uniformBuffersMapped;
+
     bool framebufferResized = false;
     GLFWwindow* window;
     std::vector<const char*> requiredExtensions;
@@ -90,6 +97,7 @@ class Engine
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     VkShaderModule createShaderModule(const std::vector<char>& source);
+    void updateUniformBuffer(uint32_t index);
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
@@ -104,11 +112,15 @@ class Engine
     void createSwapChain();
     void createImageViews();
     void createRenderPass();
+    void createDescriptorSetLayout();
     void createGraphicsPipeline();
     void createFramebuffers();
     void createVertexBuffer();
     void createIndexBuffer();
+    void createUniformBuffers();
+    void createDescriptorPool();
     void createCommandPool();
+    void createDescriptorSets();
     void createCommandBuffer();
 
     void destroyInstance();
@@ -118,8 +130,12 @@ class Engine
     void destroySwapChain();
     void destroyImageViews();
     void destroyRenderPass();
+    void destroyDescriptorSetLayout();
     void destroyGraphicsPipeline();
     void destroyFramebuffers();
+    void destroyUniformBuffers();
+    void destroyDescriptorPool();
+    void destroyDescriptorSets();
     void destroyVertexBuffer();
     void destroyIndexBuffer();
     void destroyCommandPool();
@@ -149,11 +165,15 @@ public:
         createSwapChain();
         createImageViews();
         createRenderPass();
+        createDescriptorSetLayout();
         createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
         createVertexBuffer();
         createIndexBuffer();
+        createUniformBuffers();
+        createDescriptorPool();
+        createDescriptorSets();
         createCommandBuffer();
         createSyncObjects();
     }
@@ -164,10 +184,14 @@ public:
 
         destroySyncObjects();
         destroyCommandPool();
+        destroyDescriptorSets();
+        destroyDescriptorPool();
+        destroyUniformBuffers();
         destroyIndexBuffer();
         destroyVertexBuffer();
         destroyFramebuffers();
         destroyGraphicsPipeline();
+        destroyDescriptorSetLayout();
         destroyRenderPass();
         destroyImageViews();
         destroySwapChain();
