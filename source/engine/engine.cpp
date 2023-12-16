@@ -125,6 +125,9 @@ static uint32_t ratePhysicalDevice(VkPhysicalDevice device, VkSurfaceKHR surface
     if (!queueFamilyIndices.isComplete())
         return 0;
 
+    if (deviceFeatures.samplerAnisotropy == VK_FALSE)
+        return 0;
+
     uint32_t score = 1;
 
     return score;
@@ -257,6 +260,7 @@ void Engine::createDevice()
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -440,28 +444,7 @@ void Engine::createImageViews()
 
     for (uint32_t i = 0; i < swapChainImageViews.size(); i++)
     {
-        VkImageViewCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image = swapChainImages[i];
-        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.format = swapChainImageFormat;
-
-        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        createInfo.subresourceRange.baseMipLevel = 0;
-        createInfo.subresourceRange.levelCount = 1;
-        createInfo.subresourceRange.baseArrayLayer = 0;
-        createInfo.subresourceRange.layerCount = 1;
-
-        if (VkResult result = vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]); result)
-        {
-            std::cerr << "IMAGE VIEW CREATE FAILED: " << result << std::endl;
-            throw std::runtime_error("FATAL CRASH");
-        }
+        swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat);
     }
 }
 
@@ -1395,4 +1378,66 @@ void Engine::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, u
     );
 
     endSingleTimeCommands(commandBuffer);
+}
+
+void Engine::createTextureImageView()
+{
+    textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+
+}
+
+VkImageView Engine::createImageView(VkImage image, VkFormat format)
+{
+    VkImageViewCreateInfo viewCreateInfo{};
+    viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewCreateInfo.image = image;
+    viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewCreateInfo.format = format;
+    viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewCreateInfo.subresourceRange.baseMipLevel = 0;
+    viewCreateInfo.subresourceRange.levelCount = 1;
+    viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    viewCreateInfo.subresourceRange.layerCount = 1;
+    viewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    viewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+    VkImageView imageView;
+    if (vkCreateImageView(device, &viewCreateInfo, nullptr, &imageView) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create image view");
+    }
+
+    return imageView;
+}
+
+void Engine::createTextureSampler()
+{
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_TRUE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create texture sampler");
+    }
 }

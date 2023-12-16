@@ -85,6 +85,8 @@ class Engine
     VkDeviceMemory stagingBufferMemory;
     VkImage textureImage;
     VkDeviceMemory textureImageMemory;
+    VkImageView textureImageView;
+    VkSampler textureSampler;
 
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -130,6 +132,8 @@ class Engine
     void createDescriptorPool();
     void createCommandPool();
     void createTextureImage();
+    void createTextureImageView();
+    void createTextureSampler();
     void createDescriptorSets();
     void createCommandBuffer();
 
@@ -156,6 +160,7 @@ class Engine
     void recreateSwapChain();
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    VkImageView createImageView(VkImage image, VkFormat format);
 
 public:
     void drawFrame();
@@ -180,6 +185,8 @@ public:
         createFramebuffers();
         createCommandPool();
         createTextureImage();
+        createTextureImageView();
+        createTextureSampler();
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffers();
@@ -206,6 +213,8 @@ public:
         destroyRenderPass();
         destroyImageViews();
         destroySwapChain();
+        vkDestroySampler(device, textureSampler, nullptr);
+        vkDestroyImageView(device, textureImageView, nullptr);
         vkDestroyImage(device, textureImage, nullptr);
         vkFreeMemory(device, textureImageMemory, nullptr);
         destroyDevice();
