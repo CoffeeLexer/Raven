@@ -10,10 +10,11 @@ endforeach ()
 
 project(Raven C CXX)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 
 set(FILE_PATH ${CMAKE_SOURCE_DIR})
 set(SHADER_PATH ${CMAKE_SOURCE_DIR}/shader/)
+set(TEXTURE_PATH ${CMAKE_SOURCE_DIR}/texture/)
 configure_file(config.h.in config.h)
 
 find_package(Vulkan REQUIRED)
@@ -32,6 +33,8 @@ glad_add_library(glad_vulkan REPRODUCIBLE LOADER API vulkan=1.0)
 file(GLOB_RECURSE SOURCE ${CMAKE_SOURCE_DIR}/source/*.cpp ${CMAKE_SOURCE_DIR}/source/*.hpp ${CMAKE_SOURCE_DIR}/source/*.mm)
 
 add_executable(${PROJECT_NAME} main.cpp ${SOURCE})
+
+include_directories(external/stb)
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}")
 

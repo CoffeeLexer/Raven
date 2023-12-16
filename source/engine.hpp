@@ -81,6 +81,10 @@ class Engine
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
 
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -98,6 +102,11 @@ class Engine
 
     VkShaderModule createShaderModule(const std::vector<char>& source);
     void updateUniformBuffer(uint32_t index);
+    void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+    VkCommandBuffer beginSingleTimeCommands();
+    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
@@ -120,6 +129,7 @@ class Engine
     void createUniformBuffers();
     void createDescriptorPool();
     void createCommandPool();
+    void createTextureImage();
     void createDescriptorSets();
     void createCommandBuffer();
 
@@ -169,6 +179,7 @@ public:
         createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
+        createTextureImage();
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffers();
@@ -195,6 +206,8 @@ public:
         destroyRenderPass();
         destroyImageViews();
         destroySwapChain();
+        vkDestroyImage(device, textureImage, nullptr);
+        vkFreeMemory(device, textureImageMemory, nullptr);
         destroyDevice();
         destroySurface();
         destroyDebugMessenger();

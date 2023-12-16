@@ -1,6 +1,7 @@
 #include "../engine.hpp"
 
 #include <GLFW/glfw3.h>
+#include <algorithm>
 
 VkExtent2D SwapChainDetails::chooseSwapExtent(GLFWwindow* window)
 {
