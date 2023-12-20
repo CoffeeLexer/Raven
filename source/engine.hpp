@@ -87,6 +87,9 @@ class Engine
     VkDeviceMemory textureImageMemory;
     VkImageView textureImageView;
     VkSampler textureSampler;
+    VkImage depthImage;
+    VkDeviceMemory depthImageMemory;
+    VkImageView depthImageView;
 
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -131,6 +134,7 @@ class Engine
     void createUniformBuffers();
     void createDescriptorPool();
     void createCommandPool();
+    void createDepthResource();
     void createTextureImage();
     void createTextureImageView();
     void createTextureSampler();
@@ -143,6 +147,7 @@ class Engine
     void destroyDevice();
     void destroySwapChain();
     void destroyImageViews();
+    void destroyDepthResources();
     void destroyRenderPass();
     void destroyDescriptorSetLayout();
     void destroyGraphicsPipeline();
@@ -160,7 +165,10 @@ class Engine
     void recreateSwapChain();
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    VkImageView createImageView(VkImage image, VkFormat format);
+    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectMask);
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    VkFormat findDepthFormat();
+    bool hasStencilComponent(VkFormat format);
 
 public:
     void drawFrame();
@@ -182,8 +190,9 @@ public:
         createRenderPass();
         createDescriptorSetLayout();
         createGraphicsPipeline();
-        createFramebuffers();
         createCommandPool();
+        createDepthResource();
+        createFramebuffers();
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
@@ -213,6 +222,7 @@ public:
         destroyRenderPass();
         destroyImageViews();
         destroySwapChain();
+        destroyDepthResources();
         vkDestroySampler(device, textureSampler, nullptr);
         vkDestroyImageView(device, textureImageView, nullptr);
         vkDestroyImage(device, textureImage, nullptr);
