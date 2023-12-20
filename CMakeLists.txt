@@ -13,8 +13,9 @@ project(Raven C CXX)
 set(CMAKE_CXX_STANDARD 20)
 
 set(FILE_PATH ${CMAKE_SOURCE_DIR})
-set(SHADER_PATH ${CMAKE_SOURCE_DIR}/shader/)
-set(TEXTURE_PATH ${CMAKE_SOURCE_DIR}/texture/)
+set(SHADER_PATH ${CMAKE_SOURCE_DIR}/asset/shader/)
+set(TEXTURE_PATH ${CMAKE_SOURCE_DIR}/asset/texture/)
+set(MODEL_PATH ${CMAKE_SOURCE_DIR}/asset/model/)
 configure_file(config.h.in config.h)
 
 find_package(Vulkan REQUIRED)
@@ -23,6 +24,7 @@ find_library(Metal_Library Metal)
 
 add_subdirectory(external/glm EXCLUDE_FROM_ALL)
 add_subdirectory(external/glfw EXCLUDE_FROM_ALL)
+add_subdirectory(external/tinyobjloader EXCLUDE_FROM_ALL)
 
 set(GLAD_SOURCES_DIR "${PROJECT_SOURCE_DIR}/external/glad")
 add_subdirectory("${GLAD_SOURCES_DIR}/cmake" glad_cmake)
@@ -40,6 +42,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glm)
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
+target_link_libraries(${PROJECT_NAME} PRIVATE tinyobjloader)
 target_link_libraries(${PROJECT_NAME} PRIVATE glad_opengl)
 target_link_libraries(${PROJECT_NAME} PRIVATE Vulkan::Vulkan)
 

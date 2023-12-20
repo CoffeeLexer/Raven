@@ -18,7 +18,9 @@
 	path = external/glm
 	url = https://github.com/g-truc/glm
 	branch = 0.9.9.8
-
 [submodule "external/stb"]
 	path = external/stb
 	url = https://github.com/nothings/stb
+[submodule "external/tinyobjloader"]
+	path = external/tinyobjloader
+	url = https://github.com/tinyobjloader/tinyobjloader

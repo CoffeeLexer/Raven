@@ -1,3 +1,4 @@
 #define FILE_PATH "@CMAKE_SOURCE_DIR@/"
 #define SHADER(path) "@SHADER_PATH@" path
 #define TEXTURE(path) "@TEXTURE_PATH@" path
+#define MODEL(path) "@MODEL_PATH@" path
