@@ -10,6 +10,7 @@
 #include <optional>
 
 struct GLFWwindow;
+struct Vertex;
 
 std::vector<char> readFile(const std::string& fileName);
 
@@ -77,8 +78,6 @@ class Engine
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
     VkBuffer stagingBuffer;
@@ -94,6 +93,9 @@ class Engine
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     std::vector<void*> uniformBuffersMapped;
+
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
 
     bool framebufferResized = false;
     GLFWwindow* window;
@@ -169,6 +171,7 @@ class Engine
     VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     VkFormat findDepthFormat();
     bool hasStencilComponent(VkFormat format);
+    void loadModel();
 
 public:
     void drawFrame();
@@ -196,6 +199,7 @@ public:
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
+        loadModel();
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffers();
