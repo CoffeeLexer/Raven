@@ -89,6 +89,9 @@ class Engine
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
+    VkImage colorImage;
+    VkDeviceMemory colorImageMemory;
+    VkImageView colorImageView;
 
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -102,6 +105,7 @@ class Engine
     std::vector<const char*> requiredExtensions;
     uint32_t currentFrame = 0;
     uint32_t mipLevels;
+    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
     void queueRequiredExtensions();
     bool isValidationLayerSupported();
@@ -110,11 +114,12 @@ class Engine
 
     VkShaderModule createShaderModule(const std::vector<char>& source);
     void updateUniformBuffer(uint32_t index);
-    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    void createColorResource();
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
@@ -150,6 +155,7 @@ class Engine
     void destroyDevice();
     void destroySwapChain();
     void destroyImageViews();
+    void destroyColorResources();
     void destroyDepthResources();
     void destroyRenderPass();
     void destroyDescriptorSetLayout();
@@ -174,6 +180,7 @@ class Engine
     bool hasStencilComponent(VkFormat format);
     void loadModel();
     void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+    VkSampleCountFlagBits getMaxUsableSampleCount();
 
 public:
     void drawFrame();
@@ -196,6 +203,7 @@ public:
         createDescriptorSetLayout();
         createGraphicsPipeline();
         createCommandPool();
+        createColorResource();
         createDepthResource();
         createFramebuffers();
         createTextureImage();
@@ -228,6 +236,7 @@ public:
         destroyRenderPass();
         destroyImageViews();
         destroySwapChain();
+        destroyColorResources();
         destroyDepthResources();
         vkDestroySampler(device, textureSampler, nullptr);
         vkDestroyImageView(device, textureImageView, nullptr);
