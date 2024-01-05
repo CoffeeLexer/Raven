@@ -13,6 +13,7 @@
 
 #include "shader.hpp"
 #include "config.h"
+#include "extensions.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
@@ -111,28 +112,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBits
     return VK_FALSE;
 }
 
-void Engine::queueRequiredExtensions()
-{
-    uint32_t glfwExtensionCount = 0;
-    const char **glfwExtension;
-
-    glfwExtension = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    for (size_t i = 0; i < glfwExtensionCount; i++)
-    {
-        requiredExtensions.push_back(glfwExtension[i]);
-    }
-
-#ifndef NDEBUG
-    requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-#endif
-
-#ifdef __APPLE__
-    requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-    requiredExtensions.push_back("VK_KHR_get_physical_device_properties2");
-#endif
-}
-
 static uint32_t ratePhysicalDevice(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
     VkPhysicalDeviceProperties deviceProperties{};
@@ -175,6 +154,8 @@ void Engine::createInstance()
 #ifdef __APPLE__
     createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
+
+    auto requiredExtensions = Extensions::getRequired();
 
     createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
     createInfo.ppEnabledExtensionNames = requiredExtensions.data();

@@ -102,12 +102,10 @@ class Engine
 
     bool framebufferResized = false;
     GLFWwindow* window;
-    std::vector<const char*> requiredExtensions;
     uint32_t currentFrame = 0;
     uint32_t mipLevels;
     VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    void queueRequiredExtensions();
     bool isValidationLayerSupported();
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -189,8 +187,6 @@ public:
     void create(GLFWwindow* win)
     {
         window = win;
-
-        queueRequiredExtensions();
 
         createInstance();
         createDebugMessenger();
