@@ -14,6 +14,8 @@
 #include "shader.hpp"
 #include "config.h"
 #include "extensions.h"
+#include "debug_messenger.h"
+#include "instance.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
@@ -96,22 +98,6 @@ struct UniformBufferObject
 std::vector<Vertex> vertices;
 std::vector<uint32_t> indices;
 
-VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
-{
-    switch (messageSeverity)
-    {
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            std::cout << "VALIDATION: " << pCallbackData->pMessage << std::endl;
-            break;
-        default:
-            std::cerr << "VALIDATION: " << pCallbackData->pMessage << std::endl;
-            break;
-    }
-
-    return VK_FALSE;
-}
-
 static uint32_t ratePhysicalDevice(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
     VkPhysicalDeviceProperties deviceProperties{};
@@ -135,68 +121,14 @@ static uint32_t ratePhysicalDevice(VkPhysicalDevice device, VkSurfaceKHR surface
 
 void Engine::createInstance()
 {
-#ifndef NDEBUG
-    assert(isValidationLayerSupported());
-#endif
-
-    VkApplicationInfo appInfo{};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Application Name";
-    appInfo.pEngineName = "No Engine";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion =  VK_API_VERSION_1_0;
-
-    VkInstanceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
-
-#ifdef __APPLE__
-    createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-#endif
-
-    auto requiredExtensions = Extensions::getRequired();
-
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
-    createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-
-#ifndef NDEBUG
-    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-    createInfo.ppEnabledLayerNames = validationLayers.data();
-
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    populateDebugMessengerCreateInfo(debugCreateInfo);
-
-    createInfo.pNext = &debugCreateInfo;
-#else
-    createInfo.enabledLayerCount = 0;
-    createInfo.pNext = nullptr;
-#endif
-
-    if (VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
-            result != VK_SUCCESS)
-    {
-        std::cerr << "GFX::INSTANCE CREATE FAILED: " << result << std::endl;
-        throw std::runtime_error("FATAL CRASH");
-    }
+    Instance::createInstance(instance);
 }
 
 void Engine::createDebugMessenger()
 {
-    VkDebugUtilsMessengerCreateInfoEXT createInfo;
-    populateDebugMessengerCreateInfo(createInfo);
-
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func == nullptr)
+    if (DebugMessenger::isValidationLayerSupported())
     {
-        std::cerr << "DEBUG_MESSENGER::CREATE::NO EXTENSION" << std::endl;
-        throw std::runtime_error("FATAL CRASH");
-    }
-
-    if (VkResult result = func(instance, &createInfo, nullptr, &debugMessenger); result != VK_SUCCESS)
-    {
-        std::cerr << "DEBUG_MESSENGER::CREATE FAILED: " << result << std::endl;
-        throw std::runtime_error("FATAL CRASH");
+        DebugMessenger::createDebugMessenger(instance, debugMessenger);
     }
 }
 
@@ -377,47 +309,6 @@ void Engine::destroySurface()
 void Engine::destroyDevice()
 {
     vkDestroyDevice(device, nullptr);
-}
-
-void Engine::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
-{
-    createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debugCallback;
-    createInfo.pUserData = nullptr;
-}
-
-bool Engine::isValidationLayerSupported()
-{
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-    for (const char* layerName : validationLayers)
-    {
-        bool layerFound = false;
-
-        for (const auto& layerProperties : availableLayers)
-        {
-            if (strcmp(layerName, layerProperties.layerName) == 0)
-            {
-                layerFound = true;
-                break;
-            }
-        }
-
-        if (!layerFound)
-        {
-            return false;
-        }
-    }
-
-    return true;
 }
 
 bool checkDeviceExtensionSupport(VkPhysicalDevice device)

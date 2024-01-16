@@ -106,8 +106,6 @@ class Engine
     uint32_t mipLevels;
     VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    bool isValidationLayerSupported();
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     VkShaderModule createShaderModule(const std::vector<char>& source);
